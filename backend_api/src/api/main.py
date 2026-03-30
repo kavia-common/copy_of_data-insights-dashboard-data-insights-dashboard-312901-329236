@@ -205,6 +205,30 @@ def health_endpoint():
 
 # PUBLIC_INTERFACE
 @app.get(
+    "/healthz",
+    tags=["health"],
+    summary="Healthz Endpoint",
+    description="Liveness probe alias for environments that expect /healthz.",
+    operation_id="healthz_endpoint",
+)
+def healthz_endpoint():
+    """
+    Healthz endpoint (liveness alias).
+
+    Contract:
+    - Inputs: none
+    - Output: deterministic JSON payload
+    - Errors: none expected
+    - Side effects: none
+
+    This endpoint exists to support common platform conventions (and PreviewManager
+    defaults) that check `/healthz`.
+    """
+    return {"message": "Healthy"}
+
+
+# PUBLIC_INTERFACE
+@app.get(
     "/ready",
     tags=["health"],
     summary="Readiness Endpoint",
