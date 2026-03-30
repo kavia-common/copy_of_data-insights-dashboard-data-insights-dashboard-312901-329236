@@ -1,4 +1,4 @@
 {
-    "command": "source venv/bin/activate && uvicorn src.api.main:app --host <host> --port <port>",
+    "command": "python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt && uvicorn src.api.main:app --host <host> --port <port>",
     "working_directory": "/home/kavia/workspace/code-generation/copy_of_data-insights-dashboard-data-insights-dashboard-312901-329236/backend_api"
 }
