@@ -131,12 +131,20 @@ app = FastAPI(
 #
 # Configure via env (comma-separated):
 #   CORS_ALLOW_ORIGINS="http://localhost:3000,http://localhost:3001"
+#   CORS_ALLOW_ORIGIN_REGEX="^https?://(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)(:\\d+)?$"
 #   CORS_ALLOW_CREDENTIALS="true"
+#
+# Notes:
+# - In preview/dev, hosts may vary between localhost/127.0.0.1/0.0.0.0 and ports
+#   may differ (e.g., 3000 vs 5173). A regex-based allowlist avoids brittle
+#   exact-origin mismatches that cause "Failed to fetch" due to preflight failure.
 _default_preview_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://0.0.0.0:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3001",
+    "http://0.0.0.0:3001",
 ]
 
 cors_allow_origins_env = os.getenv("CORS_ALLOW_ORIGINS", "").strip()
@@ -145,6 +153,11 @@ if cors_allow_origins_env:
 else:
     # Default to explicit preview origins so credentialed requests work out of the box.
     cors_allow_origins = _default_preview_origins
+
+# Regex allowlist (useful for localhost-like preview/dev origins with varying ports).
+cors_allow_origin_regex = os.getenv("CORS_ALLOW_ORIGIN_REGEX", "").strip() or (
+    r"^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$"
+)
 
 cors_allow_credentials_env = os.getenv("CORS_ALLOW_CREDENTIALS", "true").strip().lower()
 cors_allow_credentials = cors_allow_credentials_env in ("1", "true", "yes", "on")
@@ -160,6 +173,7 @@ if cors_allow_origins == ["*"] and cors_allow_credentials:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_allow_origins,
+    allow_origin_regex=cors_allow_origin_regex,
     allow_credentials=cors_allow_credentials,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     # Be permissive on allowed headers to ensure browser preflight succeeds across
