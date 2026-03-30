@@ -162,8 +162,10 @@ app.add_middleware(
     allow_origins=cors_allow_origins,
     allow_credentials=cors_allow_credentials,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    # Allow common headers needed by browser preflight + auth flows.
-    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
+    # Be permissive on allowed headers to ensure browser preflight succeeds across
+    # different frontend stacks (Authorization, trace headers, x-* custom headers, etc).
+    # This does not weaken auth; it only controls which headers browsers may send.
+    allow_headers=["*"],
     expose_headers=["Content-Disposition"],
     max_age=600,
 )

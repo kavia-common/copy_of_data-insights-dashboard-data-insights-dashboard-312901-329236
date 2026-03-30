@@ -37,7 +37,7 @@ async def query_audit_events(
     entity_type: Optional[str] = Query(None, description="Filter by entity type"),
     entity_id: Optional[str] = Query(None, description="Filter by entity ID"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum events to return"),
-    current_user: dict = Security(require_roles(["auditor", "governance_admin"])),
+    current_user: dict = Security(require_roles(["auditor", "admin", "governance_admin"])),
 ) -> GetAuditEventsResponse:
     """
     PUBLIC_INTERFACE

@@ -50,9 +50,30 @@ def is_registration_enabled(default_env: str = "true") -> bool:
 
 
 def _normalize_roles(raw_role: str) -> List[str]:
-    """Normalize legacy roles used by tests to current RBAC roles."""
+    """Normalize a single (possibly legacy) role name to current RBAC role names."""
     mapped = LEGACY_ROLE_MAP.get(raw_role, raw_role)
     return [mapped]
+
+
+def _normalize_role_list(raw_roles: List[str]) -> List[str]:
+    """Normalize a list of roles, mapping legacy names and removing duplicates."""
+    normalized: List[str] = []
+    for r in raw_roles or []:
+        for mapped in _normalize_roles(r):
+            if mapped and mapped not in normalized:
+                normalized.append(mapped)
+    return normalized
+
+
+def _normalize_required_roles(required_roles: List[str]) -> List[str]:
+    """
+    Normalize required roles for RBAC checks.
+
+    This allows routers to specify either:
+      - current roles (e.g., "admin"), OR
+      - legacy roles used by earlier specs/tests (e.g., "governance_admin")
+    """
+    return _normalize_role_list(required_roles or [])
 
 
 class AuthService:
@@ -217,7 +238,8 @@ class AuthService:
             if not row["is_active"]:
                 raise HTTPException(status_code=401, detail="User account is inactive")
 
-            roles = row["roles"].split(",") if row["roles"] else []
+            roles_raw = row["roles"].split(",") if row["roles"] else []
+            roles = _normalize_role_list(roles_raw)
             primary_role = roles[0] if roles else "submitter"
 
             return {"user_id": row["user_id"], "username": row["username"], "roles": roles, "role": primary_role}
@@ -326,10 +348,19 @@ def get_current_user_dep(credentials: HTTPAuthorizationCredentials = Security(se
 # PUBLIC_INTERFACE
 def require_roles(required_roles: List[str]):
     """FastAPI dependency factory enforcing that the user has at least one required role."""
+    normalized_required = _normalize_required_roles(required_roles)
+
     def role_checker(user: Dict[str, Any] = Security(get_current_user_dep)):
-        user_roles = user.get("roles", [])
-        if not any(role in user_roles for role in required_roles):
-            raise HTTPException(status_code=403, detail=f"Insufficient permissions. Required roles: {required_roles}")
+        user_roles = _normalize_role_list(user.get("roles", []))
+        if not any(role in user_roles for role in normalized_required):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Insufficient permissions. Required roles: {normalized_required}",
+            )
+        # Return user with normalized roles to keep downstream consistent.
+        user["roles"] = user_roles
+        if user_roles:
+            user["role"] = user_roles[0]
         return user
 
     return role_checker
