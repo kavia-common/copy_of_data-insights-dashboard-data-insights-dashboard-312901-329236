@@ -1,4 +1,4 @@
 {
-    "command": "bash -lc 'if [ ! -d venv ]; then python3 -m venv venv; fi && source venv/bin/activate && export PYTHONPATH=\"$PWD/src\"${PYTHONPATH:+\":$PYTHONPATH\"} && exec python -m uvicorn api.main:app --host 0.0.0.0 --port 3001 --log-level info'",
+    "command": "bash -lc 'if [ ! -d venv ]; then python3 -m venv venv; fi && source venv/bin/activate && export PYTHONPATH=\"$PWD/src\"${PYTHONPATH:+\":$PYTHONPATH\"} && exec python -m uvicorn api.main:app --host 0.0.0.0 --port 3001 --log-level info --timeout-keep-alive 5 --limit-max-requests 1000000'",
     "working_directory": "/home/kavia/workspace/code-generation/copy_of_data-insights-dashboard-data-insights-dashboard-312901-329236/backend_api"
 }

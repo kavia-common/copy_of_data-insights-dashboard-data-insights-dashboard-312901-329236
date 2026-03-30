@@ -118,10 +118,37 @@ app = FastAPI(
 )
 
 # CORS middleware
+#
+# NOTE:
+# - Browsers do not allow `Access-Control-Allow-Origin: *` together with
+#   `Access-Control-Allow-Credentials: true`.
+# - For local dev / preview, we default to permissive origins WITHOUT credentials.
+#
+# Configure explicitly via env:
+#   CORS_ALLOW_ORIGINS="https://your-frontend.example.com,https://another.example.com"
+#   CORS_ALLOW_CREDENTIALS="true"
+cors_allow_origins_env = os.getenv("CORS_ALLOW_ORIGINS", "*").strip()
+cors_allow_origins = (
+    ["*"]
+    if cors_allow_origins_env in ("*", "")
+    else [o.strip() for o in cors_allow_origins_env.split(",") if o.strip()]
+)
+
+cors_allow_credentials_env = os.getenv("CORS_ALLOW_CREDENTIALS", "false").strip().lower()
+cors_allow_credentials = cors_allow_credentials_env in ("1", "true", "yes", "on")
+
+# If origins are wildcard, credentials must be disabled for standards compliance.
+if cors_allow_origins == ["*"] and cors_allow_credentials:
+    logger.warning(
+        "CORS misconfiguration: CORS_ALLOW_ORIGINS='*' with credentials enabled. "
+        "Forcing allow_credentials=False to avoid invalid CORS responses."
+    )
+    cors_allow_credentials = False
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=cors_allow_origins,
+    allow_credentials=cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
