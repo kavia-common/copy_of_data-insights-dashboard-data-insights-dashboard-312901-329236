@@ -119,25 +119,37 @@ app = FastAPI(
 
 # CORS middleware
 #
-# NOTE:
-# - Browsers do not allow `Access-Control-Allow-Origin: *` together with
-#   `Access-Control-Allow-Credentials: true`.
-# - For local dev / preview, we default to permissive origins WITHOUT credentials.
+# Goal (preview/dev):
+# - Frontend typically runs on http://localhost:3000
+# - Backend typically runs on http://localhost:3001
+# - Browser preflight (OPTIONS) must succeed for requests with Authorization header
+#   and/or credentials.
 #
-# Configure explicitly via env:
-#   CORS_ALLOW_ORIGINS="https://your-frontend.example.com,https://another.example.com"
+# IMPORTANT:
+# - Browsers do NOT allow `Access-Control-Allow-Origin: *` together with
+#   `Access-Control-Allow-Credentials: true`.
+#
+# Configure via env (comma-separated):
+#   CORS_ALLOW_ORIGINS="http://localhost:3000,http://localhost:3001"
 #   CORS_ALLOW_CREDENTIALS="true"
-cors_allow_origins_env = os.getenv("CORS_ALLOW_ORIGINS", "*").strip()
-cors_allow_origins = (
-    ["*"]
-    if cors_allow_origins_env in ("*", "")
-    else [o.strip() for o in cors_allow_origins_env.split(",") if o.strip()]
-)
+_default_preview_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+]
 
-cors_allow_credentials_env = os.getenv("CORS_ALLOW_CREDENTIALS", "false").strip().lower()
+cors_allow_origins_env = os.getenv("CORS_ALLOW_ORIGINS", "").strip()
+if cors_allow_origins_env:
+    cors_allow_origins = [o.strip() for o in cors_allow_origins_env.split(",") if o.strip()]
+else:
+    # Default to explicit preview origins so credentialed requests work out of the box.
+    cors_allow_origins = _default_preview_origins
+
+cors_allow_credentials_env = os.getenv("CORS_ALLOW_CREDENTIALS", "true").strip().lower()
 cors_allow_credentials = cors_allow_credentials_env in ("1", "true", "yes", "on")
 
-# If origins are wildcard, credentials must be disabled for standards compliance.
+# Guard against invalid combination (credentials + wildcard).
 if cors_allow_origins == ["*"] and cors_allow_credentials:
     logger.warning(
         "CORS misconfiguration: CORS_ALLOW_ORIGINS='*' with credentials enabled. "
@@ -149,8 +161,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_allow_origins,
     allow_credentials=cors_allow_credentials,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    # Allow common headers needed by browser preflight + auth flows.
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
+    expose_headers=["Content-Disposition"],
+    max_age=600,
 )
 
 # Register routers
