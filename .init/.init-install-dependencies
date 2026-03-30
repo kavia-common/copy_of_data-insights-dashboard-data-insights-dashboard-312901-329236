@@ -1,4 +1,4 @@
 {
-    "command": "bash -lc 'python3 -m venv venv && source venv/bin/activate && python -m pip install -r requirements.txt'",
+    "command": "bash -lc 'python3 -m venv .venv && source .venv/bin/activate && python -m pip install -r requirements.txt'",
     "working_directory": "/home/kavia/workspace/code-generation/copy_of_data-insights-dashboard-data-insights-dashboard-312901-329236/backend_api"
 }
