@@ -4,7 +4,7 @@
 # Contract:
 #  Inputs (env vars):
 #    - HOST (default: 0.0.0.0)
-#    - PORT (default: 8000)
+#    - PORT (default: 3001)
 #    - RELOAD (default: 1; set to 0 to disable)
 #    - LOG_LEVEL (default: info)
 #  Outputs:
@@ -37,13 +37,13 @@ print_502_hints() {
 1) Backend not running / crashed at startup
    - Look ABOVE in the logs for an import error, missing dependency, or exception during app startup.
    - Try hitting health endpoints directly:
-       curl -v http://127.0.0.1:8000/health
-       curl -v http://127.0.0.1:8000/ready
+       curl -v http://127.0.0.1:3001/health
+       curl -v http://127.0.0.1:3001/ready
 
 2) Wrong host/port or not reachable from proxy
-   - If a reverse proxy expects the backend on 0.0.0.0:8000 but you're binding to 127.0.0.1, it may 502.
+   - If a reverse proxy expects the backend on 0.0.0.0:3001 but you're binding to 127.0.0.1, it may 502.
    - Ensure HOST/PORT match whatever is proxying to the backend.
-   - This script defaults to HOST=0.0.0.0 PORT=8000.
+   - This script defaults to HOST=0.0.0.0 PORT=3001.
 
 3) Port already in use / uvicorn never actually started
    - If PORT is occupied, uvicorn may fail immediately.
@@ -77,7 +77,7 @@ BACKEND_DIR="${REPO_ROOT}/backend_api"
 VENV_DIR="${BACKEND_DIR}/.venv"
 
 HOST="${HOST:-0.0.0.0}"
-PORT="${PORT:-8000}"
+PORT="${PORT:-3001}"
 RELOAD="${RELOAD:-1}"   # set RELOAD=0 to disable auto-reload
 LOG_LEVEL="${LOG_LEVEL:-info}"
 
