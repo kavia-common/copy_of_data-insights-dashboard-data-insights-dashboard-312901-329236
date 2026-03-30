@@ -1,0 +1,3 @@
+# Convenience requirements file for running from the repository root.
+# The backend dependencies live under backend_api/.
+-r backend_api/requirements.txt

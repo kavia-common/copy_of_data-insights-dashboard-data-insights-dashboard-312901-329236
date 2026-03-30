@@ -39,12 +39,20 @@ source "${VENV_DIR}/bin/activate"
 echo "[run_backend] Upgrading pip tooling"
 python -m pip install --upgrade pip setuptools wheel
 
-echo "[run_backend] Installing backend requirements"
-python -m pip install -r requirements.txt
+if [[ ! -f "${BACKEND_DIR}/requirements.txt" ]]; then
+  echo "ERROR: Missing backend requirements file at: ${BACKEND_DIR}/requirements.txt"
+  echo "Expected this repo to include backend_api/requirements.txt."
+  exit 1
+fi
 
-# Ensure imports like "from api.main import app" work (src/api/main.py)
+echo "[run_backend] Installing backend requirements (${BACKEND_DIR}/requirements.txt)"
+python -m pip install -r "${BACKEND_DIR}/requirements.txt"
+
+# Ensure imports like "from api.main import app" work (backend_api/src/api/main.py)
 export PYTHONPATH="${BACKEND_DIR}/src${PYTHONPATH:+:${PYTHONPATH}}"
 
+# FastAPI entrypoint:
+#   backend_api/src/api/main.py  ->  module "api.main", attribute "app"
 UVICORN_CMD=(python -m uvicorn api.main:app --host "${HOST}" --port "${PORT}" --log-level "${LOG_LEVEL}")
 
 if [[ "${RELOAD}" == "1" ]]; then
